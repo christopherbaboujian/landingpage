@@ -1,0 +1,10 @@
+{
+  "hosted-zone:account=994880124163:domainName=leantoolkitpages.com:region=eu-central-1": {
+    "Id": "/hostedzone/Z03849061K6WUXO3FDI5V",
+    "Name": "leantoolkitpages.com."
+  },
+  "hosted-zone:account=994880124163:domainName=optifitdrink.nl:region=eu-central-1": {
+    "Id": "/hostedzone/Z10115132GLK1V21A5MTH",
+    "Name": "optifitdrink.nl."
+  }
+}

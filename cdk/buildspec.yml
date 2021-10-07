@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - cd cdk
+      - npm ci
+  build:
+    commands:
+      - npx cdk synth
+
+artifacts:
+  base-directory: cdk/cdk.out
+  files: "**/*"

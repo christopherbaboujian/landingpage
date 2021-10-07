@@ -1,0 +1,1017 @@
+Resources:
+  LandingPagesD7B98D7E:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: landingpages
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: Api/LandingPages/Resource
+  CORSServiceRoleD016BAA8:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: Api/CORS/ServiceRole/Resource
+  CORS910E37CD:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 5ef116740dea5fba8d5a43cb6fcb1b672bb63bb89e974cba047ad0abb6edda98.zip
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - CORSServiceRoleD016BAA8
+          - Arn
+      Runtime: python3.8
+      Environment:
+        Variables:
+          ALLOWED_ORIGINS: https://leantoolkitpages.com,https://optifitdrink.nl
+    DependsOn:
+      - CORSServiceRoleD016BAA8
+    Metadata:
+      aws:cdk:path: Api/CORS/Resource
+      aws:asset:path: /Users/lnunezg/Workspace/maurice/landingpages/api/cors
+      aws:asset:property: Code
+  sendEmailServiceRoleB212B52C:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: Api/sendEmail/ServiceRole/Resource
+  sendEmailServiceRoleDefaultPolicy7E51B43A:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: ses:SendEmail
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: sendEmailServiceRoleDefaultPolicy7E51B43A
+      Roles:
+        - Ref: sendEmailServiceRoleB212B52C
+    Metadata:
+      aws:cdk:path: Api/sendEmail/ServiceRole/DefaultPolicy/Resource
+  sendEmailB8798357:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 9096de0fcb85b6042c8674d44a7ecd4d1839c71baccf0a46b132dc270cf39983.zip
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - sendEmailServiceRoleB212B52C
+          - Arn
+      Runtime: python3.8
+    DependsOn:
+      - sendEmailServiceRoleDefaultPolicy7E51B43A
+      - sendEmailServiceRoleB212B52C
+    Metadata:
+      aws:cdk:path: Api/sendEmail/Resource
+      aws:asset:path: /Users/lnunezg/Workspace/maurice/landingpages/api/send_email
+      aws:asset:property: Code
+  createEventServiceRole866CD939:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: Api/createEvent/ServiceRole/Resource
+  createEventServiceRoleDefaultPolicyFC79184D:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - LandingPagesD7B98D7E
+                  - Arn
+              - Ref: AWS::NoValue
+        Version: "2012-10-17"
+      PolicyName: createEventServiceRoleDefaultPolicyFC79184D
+      Roles:
+        - Ref: createEventServiceRole866CD939
+    Metadata:
+      aws:cdk:path: Api/createEvent/ServiceRole/DefaultPolicy/Resource
+  createEventB5E2789C:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: f922ff0329bc987e804da82bafedf895433cb3e35a54364d80be3e2c0c23fca4.zip
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - createEventServiceRole866CD939
+          - Arn
+      Runtime: python3.8
+      Environment:
+        Variables:
+          ENDPOINT_URL:
+            Fn::Join:
+              - ""
+              - - https://dynamodb.
+                - Ref: AWS::Region
+                - .amazonaws.com
+          TABLE_NAME:
+            Ref: LandingPagesD7B98D7E
+          SEND_EMAIL_FUNCTION_NAME:
+            Ref: sendEmailB8798357
+    DependsOn:
+      - createEventServiceRoleDefaultPolicyFC79184D
+      - createEventServiceRole866CD939
+    Metadata:
+      aws:cdk:path: Api/createEvent/Resource
+      aws:asset:path: /Users/lnunezg/Workspace/maurice/landingpages/api/events/create
+      aws:asset:property: Code
+  getEventServiceRole6C1BB000:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: Api/getEvent/ServiceRole/Resource
+  getEventServiceRoleDefaultPolicy320EDA7F:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - LandingPagesD7B98D7E
+                  - Arn
+              - Ref: AWS::NoValue
+        Version: "2012-10-17"
+      PolicyName: getEventServiceRoleDefaultPolicy320EDA7F
+      Roles:
+        - Ref: getEventServiceRole6C1BB000
+    Metadata:
+      aws:cdk:path: Api/getEvent/ServiceRole/DefaultPolicy/Resource
+  getEventBBCE0D0F:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 540ee30cb20311542ec6b98f7ce1ae9508ee09123f35d7a679356d2c7e9e2527.zip
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - getEventServiceRole6C1BB000
+          - Arn
+      Runtime: python3.8
+      Environment:
+        Variables:
+          ENDPOINT_URL:
+            Fn::Join:
+              - ""
+              - - https://dynamodb.
+                - Ref: AWS::Region
+                - .amazonaws.com
+          TABLE_NAME:
+            Ref: LandingPagesD7B98D7E
+    DependsOn:
+      - getEventServiceRoleDefaultPolicy320EDA7F
+      - getEventServiceRole6C1BB000
+    Metadata:
+      aws:cdk:path: Api/getEvent/Resource
+      aws:asset:path: /Users/lnunezg/Workspace/maurice/landingpages/api/events/get
+      aws:asset:property: Code
+  deleteEventServiceRole73F1FA22:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: Api/deleteEvent/ServiceRole/Resource
+  deleteEventServiceRoleDefaultPolicy8EFA8BC8:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - LandingPagesD7B98D7E
+                  - Arn
+              - Ref: AWS::NoValue
+        Version: "2012-10-17"
+      PolicyName: deleteEventServiceRoleDefaultPolicy8EFA8BC8
+      Roles:
+        - Ref: deleteEventServiceRole73F1FA22
+    Metadata:
+      aws:cdk:path: Api/deleteEvent/ServiceRole/DefaultPolicy/Resource
+  deleteEventEB4BCDA2:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 7bca00a387dc222b278fe332f3cd1c8649bdb721c27aa110e133b82ca3a50a1b.zip
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - deleteEventServiceRole73F1FA22
+          - Arn
+      Runtime: python3.8
+      Environment:
+        Variables:
+          ENDPOINT_URL:
+            Fn::Join:
+              - ""
+              - - https://dynamodb.
+                - Ref: AWS::Region
+                - .amazonaws.com
+          TABLE_NAME:
+            Ref: LandingPagesD7B98D7E
+    DependsOn:
+      - deleteEventServiceRoleDefaultPolicy8EFA8BC8
+      - deleteEventServiceRole73F1FA22
+    Metadata:
+      aws:cdk:path: Api/deleteEvent/Resource
+      aws:asset:path: /Users/lnunezg/Workspace/maurice/landingpages/api/events/delete
+      aws:asset:property: Code
+  RestApi0C43BF4B:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Name: RestApi
+    Metadata:
+      aws:cdk:path: Api/RestApi/Resource
+  RestApiCloudWatchRoleE3ED6605:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+    Metadata:
+      aws:cdk:path: Api/RestApi/CloudWatchRole/Resource
+  RestApiAccount7C83CF5A:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn:
+        Fn::GetAtt:
+          - RestApiCloudWatchRoleE3ED6605
+          - Arn
+    DependsOn:
+      - RestApi0C43BF4B
+    Metadata:
+      aws:cdk:path: Api/RestApi/Account
+  RestApiDeployment180EC503f0b4c8b4a3432cec1234bd1507258af5:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId:
+        Ref: RestApi0C43BF4B
+      Description: Automatically created by the RestApi construct
+    DependsOn:
+      - RestApiapieventsidDELETE0CDF500B
+      - RestApiapieventsidGETCF598671
+      - RestApiapieventsidOPTIONS598C513C
+      - RestApiapieventsid91D9BB1D
+      - RestApiapieventsOPTIONS326FA00A
+      - RestApiapieventsPOSTD99FB82B
+      - RestApiapievents2E2E7D60
+      - RestApiapiC55947A1
+    Metadata:
+      aws:cdk:path: Api/RestApi/Deployment/Resource
+  RestApiDeploymentStageprod3855DE66:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId:
+        Ref: RestApi0C43BF4B
+      DeploymentId:
+        Ref: RestApiDeployment180EC503f0b4c8b4a3432cec1234bd1507258af5
+      StageName: prod
+    Metadata:
+      aws:cdk:path: Api/RestApi/DeploymentStage.prod/Resource
+  RestApiapiC55947A1:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt:
+          - RestApi0C43BF4B
+          - RootResourceId
+      PathPart: api
+      RestApiId:
+        Ref: RestApi0C43BF4B
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/Resource
+  RestApiapievents2E2E7D60:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Ref: RestApiapiC55947A1
+      PathPart: events
+      RestApiId:
+        Ref: RestApi0C43BF4B
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/Resource
+  RestApiapieventsOPTIONSApiPermissionApiRestApi88175D59OPTIONSapievents9436608F:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - CORS910E37CD
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /
+            - Ref: RestApiDeploymentStageprod3855DE66
+            - /OPTIONS/api/events
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/OPTIONS/ApiPermission.ApiRestApi88175D59.OPTIONS..api.events
+  RestApiapieventsOPTIONSApiPermissionTestApiRestApi88175D59OPTIONSapievents56DCFAA2:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - CORS910E37CD
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /test-invoke-stage/OPTIONS/api/events
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/OPTIONS/ApiPermission.Test.ApiRestApi88175D59.OPTIONS..api.events
+  RestApiapieventsOPTIONS326FA00A:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId:
+        Ref: RestApiapievents2E2E7D60
+      RestApiId:
+        Ref: RestApi0C43BF4B
+      AuthorizationType: NONE
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - CORS910E37CD
+                  - Arn
+              - /invocations
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/OPTIONS/Resource
+  RestApiapieventsPOSTApiPermissionApiRestApi88175D59POSTapievents34E073E5:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - createEventB5E2789C
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /
+            - Ref: RestApiDeploymentStageprod3855DE66
+            - /POST/api/events
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/POST/ApiPermission.ApiRestApi88175D59.POST..api.events
+  RestApiapieventsPOSTApiPermissionTestApiRestApi88175D59POSTapievents64096F44:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - createEventB5E2789C
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /test-invoke-stage/POST/api/events
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/POST/ApiPermission.Test.ApiRestApi88175D59.POST..api.events
+  RestApiapieventsPOSTD99FB82B:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId:
+        Ref: RestApiapievents2E2E7D60
+      RestApiId:
+        Ref: RestApi0C43BF4B
+      ApiKeyRequired: true
+      AuthorizationType: NONE
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - createEventB5E2789C
+                  - Arn
+              - /invocations
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/POST/Resource
+  RestApiapieventsid91D9BB1D:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Ref: RestApiapievents2E2E7D60
+      PathPart: "{id}"
+      RestApiId:
+        Ref: RestApi0C43BF4B
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/Resource
+  RestApiapieventsidOPTIONSApiPermissionApiRestApi88175D59OPTIONSapieventsid493CD086:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - CORS910E37CD
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /
+            - Ref: RestApiDeploymentStageprod3855DE66
+            - /OPTIONS/api/events/*
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/OPTIONS/ApiPermission.ApiRestApi88175D59.OPTIONS..api.events.{id}
+  RestApiapieventsidOPTIONSApiPermissionTestApiRestApi88175D59OPTIONSapieventsid140FB689:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - CORS910E37CD
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /test-invoke-stage/OPTIONS/api/events/*
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/OPTIONS/ApiPermission.Test.ApiRestApi88175D59.OPTIONS..api.events.{id}
+  RestApiapieventsidOPTIONS598C513C:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: OPTIONS
+      ResourceId:
+        Ref: RestApiapieventsid91D9BB1D
+      RestApiId:
+        Ref: RestApi0C43BF4B
+      AuthorizationType: NONE
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - CORS910E37CD
+                  - Arn
+              - /invocations
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/OPTIONS/Resource
+  RestApiapieventsidGETApiPermissionApiRestApi88175D59GETapieventsid158BA89E:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - getEventBBCE0D0F
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /
+            - Ref: RestApiDeploymentStageprod3855DE66
+            - /GET/api/events/*
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/GET/ApiPermission.ApiRestApi88175D59.GET..api.events.{id}
+  RestApiapieventsidGETApiPermissionTestApiRestApi88175D59GETapieventsid16FBB584:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - getEventBBCE0D0F
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /test-invoke-stage/GET/api/events/*
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/GET/ApiPermission.Test.ApiRestApi88175D59.GET..api.events.{id}
+  RestApiapieventsidGETCF598671:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId:
+        Ref: RestApiapieventsid91D9BB1D
+      RestApiId:
+        Ref: RestApi0C43BF4B
+      ApiKeyRequired: true
+      AuthorizationType: NONE
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - getEventBBCE0D0F
+                  - Arn
+              - /invocations
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/GET/Resource
+  RestApiapieventsidDELETEApiPermissionApiRestApi88175D59DELETEapieventsid242210EF:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - deleteEventEB4BCDA2
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /
+            - Ref: RestApiDeploymentStageprod3855DE66
+            - /DELETE/api/events/*
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/DELETE/ApiPermission.ApiRestApi88175D59.DELETE..api.events.{id}
+  RestApiapieventsidDELETEApiPermissionTestApiRestApi88175D59DELETEapieventsidE728E431:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - deleteEventEB4BCDA2
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - ":execute-api:"
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":"
+            - Ref: RestApi0C43BF4B
+            - /test-invoke-stage/DELETE/api/events/*
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/DELETE/ApiPermission.Test.ApiRestApi88175D59.DELETE..api.events.{id}
+  RestApiapieventsidDELETE0CDF500B:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: DELETE
+      ResourceId:
+        Ref: RestApiapieventsid91D9BB1D
+      RestApiId:
+        Ref: RestApi0C43BF4B
+      ApiKeyRequired: true
+      AuthorizationType: NONE
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :lambda:path/2015-03-31/functions/
+              - Fn::GetAtt:
+                  - deleteEventEB4BCDA2
+                  - Arn
+              - /invocations
+    Metadata:
+      aws:cdk:path: Api/RestApi/Default/api/events/{id}/DELETE/Resource
+  RestApiApiKey5B1534BA:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Enabled: true
+      StageKeys:
+        - RestApiId:
+            Ref: RestApi0C43BF4B
+          StageName:
+            Ref: RestApiDeploymentStageprod3855DE66
+    Metadata:
+      aws:cdk:path: Api/RestApi/ApiKey/Resource
+  RestApiFullAccess191937F8:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      ApiStages:
+        - ApiId:
+            Ref: RestApi0C43BF4B
+          Stage:
+            Ref: RestApiDeploymentStageprod3855DE66
+          Throttle: {}
+    Metadata:
+      aws:cdk:path: Api/RestApi/FullAccess/Resource
+  RestApiFullAccessUsagePlanKeyResourceB982DB1D:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId:
+        Ref: RestApiApiKey5B1534BA
+      KeyType: API_KEY
+      UsagePlanId:
+        Ref: RestApiFullAccess191937F8
+    Metadata:
+      aws:cdk:path: Api/RestApi/FullAccess/UsagePlanKeyResource
+  LeanToolKitPagesIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      AllowUnauthenticatedIdentities: true
+    Metadata:
+      aws:cdk:path: Api/LeanToolKitPagesIdentityPool
+  CognitoUnauthenticatedRoleCF6AD730:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud:
+                  Ref: LeanToolKitPagesIdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: unauthenticated
+            Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: Api/CognitoUnauthenticatedRole/Resource
+  CognitoUnauthenticatedRoleDefaultPolicyA3267F02:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - mobileanalytics:PutEvents
+              - cognito-sync:*
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: CognitoUnauthenticatedRoleDefaultPolicyA3267F02
+      Roles:
+        - Ref: CognitoUnauthenticatedRoleCF6AD730
+    Metadata:
+      aws:cdk:path: Api/CognitoUnauthenticatedRole/DefaultPolicy/Resource
+  IdentityPoolRoleAttachment:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId:
+        Ref: LeanToolKitPagesIdentityPool
+      Roles:
+        unauthenticated:
+          Fn::GetAtt:
+            - CognitoUnauthenticatedRoleCF6AD730
+            - Arn
+    Metadata:
+      aws:cdk:path: Api/IdentityPoolRoleAttachment
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Modules: aws-cdk=1.74.0,@aws-cdk/assets=1.74.0,@aws-cdk/aws-apigateway=1.74.0,@aws-cdk/aws-applicationautoscaling=1.74.0,@aws-cdk/aws-autoscaling-common=1.74.0,@aws-cdk/aws-certificatemanager=1.74.0,@aws-cdk/aws-cloudfront=1.74.0,@aws-cdk/aws-cloudfront-origins=1.74.0,@aws-cdk/aws-cloudwatch=1.74.0,@aws-cdk/aws-codeguruprofiler=1.74.0,@aws-cdk/aws-cognito=1.74.0,@aws-cdk/aws-dynamodb=1.74.0,@aws-cdk/aws-ec2=1.74.0,@aws-cdk/aws-events=1.74.0,@aws-cdk/aws-iam=1.74.0,@aws-cdk/aws-kms=1.74.0,@aws-cdk/aws-lambda=1.74.0,@aws-cdk/aws-logs=1.74.0,@aws-cdk/aws-route53=1.74.0,@aws-cdk/aws-route53-targets=1.74.0,@aws-cdk/aws-s3=1.74.0,@aws-cdk/aws-s3-assets=1.74.0,@aws-cdk/aws-s3-deployment=1.74.0,@aws-cdk/aws-sqs=1.74.0,@aws-cdk/aws-ssm=1.74.0,@aws-cdk/cloud-assembly-schema=1.74.0,@aws-cdk/core=1.74.0,@aws-cdk/custom-resources=1.74.0,@aws-cdk/cx-api=1.74.0,@aws-cdk/region-info=1.74.0,jsii-runtime=node.js/v15.1.0
+    Metadata:
+      aws:cdk:path: Api/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Outputs:
+  RestApiEndpoint0551178A:
+    Value:
+      Fn::Join:
+        - ""
+        - - https://
+          - Ref: RestApi0C43BF4B
+          - .execute-api.
+          - Ref: AWS::Region
+          - "."
+          - Ref: AWS::URLSuffix
+          - /
+          - Ref: RestApiDeploymentStageprod3855DE66
+          - /
+  ApiDomain:
+    Value:
+      Fn::Join:
+        - ""
+        - - Ref: RestApi0C43BF4B
+          - .execute-api.
+          - Ref: AWS::Region
+          - .amazonaws.com
+    Export:
+      Name: ApiDomain
+  ApiStage:
+    Value:
+      Ref: RestApiDeploymentStageprod3855DE66
+    Export:
+      Name: ApiStage
+  ApiKeyId:
+    Value:
+      Ref: RestApiApiKey5B1534BA
+  IdentityPoolRef:
+    Value:
+      Ref: LeanToolKitPagesIdentityPool
+  CognitoUnauthenticatedRoleArn:
+    Value:
+      Fn::GetAtt:
+        - CognitoUnauthenticatedRoleCF6AD730
+        - Arn
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store.
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Contains:
+                - - "1"
+                  - "2"
+                  - "3"
+                - Ref: BootstrapVersion
+        AssertDescription: CDK bootstrap stack version 4 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.
+

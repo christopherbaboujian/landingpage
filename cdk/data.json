@@ -1,0 +1,7 @@
+{
+  "userId": "eu-central-1:37daeadb-585d-4737-8132-96417b487xxa",
+  "location": "http://domain.com?utm=value",
+  "event": "page",
+  "action": "loaded",
+  "content": ""
+}

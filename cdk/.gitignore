@@ -1,0 +1,8 @@
+*.js
+*.d.ts
+node_modules
+.yarn/
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
